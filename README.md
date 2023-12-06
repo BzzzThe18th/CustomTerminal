@@ -1,2 +1,4 @@
-# LethalCompanyModTemplate
- Mod template for lethal company
+
+# Custom Terminal
+
+Custom terminal mod for Lethal Company.
