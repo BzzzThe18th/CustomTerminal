@@ -388,3 +388,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# Addition stuff
+Resources

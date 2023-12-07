@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using System.IO;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,6 +21,16 @@ namespace CustomTerminal
         private Color currentGamerRGB;
 
         public static Terminal terminalInstance;
+        public static RawImage wallpaperInstance;
+
+        public static Texture2D GetTextureFromFile(string path)
+        {
+            byte[] imageData = File.ReadAllBytes(path);
+            Texture2D texture = new Texture2D(1000,1000);
+            texture.LoadImage(imageData);
+            texture.filterMode = FilterMode.Point;
+            return texture;
+        }
 
         void Awake()
         {
@@ -59,6 +70,15 @@ namespace CustomTerminal
                         set the light color
                     */
                     terminalInstance.terminalLight.color = currentGamerRGB;
+                }
+                if (CustomTerminal.Config.Config.wallpaperGamerMode.Value && CustomTerminal.Config.Config.useWallpaper.Value)
+                {
+                    if (wallpaperInstance != null) {
+                        /*
+                            set the wallpaper image color
+                        */
+                        wallpaperInstance.color = currentGamerRGB;
+                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
-using System;
-using BepInEx;
+using System.Collections;
+using System.IO;
+using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +14,20 @@ namespace CustomTerminal.Patches
         {
             Main.terminalInstance = __instance;
             Config.Config.LoadConfig();
+
+            if (Config.Config.useWallpaper.Value)
+            {
+                /*
+                    set up custom wallpaper
+                */
+                GameObject wallpaper = new GameObject("TerminalBackground");
+                wallpaper.transform.SetParent(__instance.topRightText.transform.parent, false);
+                wallpaper.transform.localPosition = new Vector3(30,15,0);
+                wallpaper.transform.localScale = new Vector3(5,5,5);
+                wallpaper.transform.SetSiblingIndex(2);
+                Main.wallpaperInstance = wallpaper.AddComponent<RawImage>();
+                Main.wallpaperInstance.texture = Main.GetTextureFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "wallpaper.png"));
+            }
             /*
                 convert epic 256 bit rgb to cringe unity rgb
             */
@@ -31,7 +46,7 @@ namespace CustomTerminal.Patches
                 /*
                     the alpha on the back image of the credits display needs to maintain it's alpha value for visibility
                 */
-                float imageAlpha = __instance.topRightText.transform.parent.GetChild(5).GetComponent<Image>().color.a;
+                float imageAlpha = __instance.topRightText.transform.parent.GetChild(6).GetComponent<Image>().color.a;
                 __instance.topRightText.transform.parent.GetChild(5).GetComponent<Image>().color = new Color(colorTheme.r,colorTheme.g,colorTheme.b,imageAlpha);
             }
 
@@ -61,10 +76,35 @@ namespace CustomTerminal.Patches
     internal class TerminalInUseClientRPC
     {
         /*
-            I'll just use a postfix here because I don't feel like re-writing the original function, some delay but whatever
+            I'll just use a postfix here because I don't feel like re-writing the original code, some delay but whatever
         */
         internal static void Postfix(Terminal __instance, bool inUse) {
+            __instance.StopCoroutine("waitUntilFrameEndToSetActive");
             __instance.terminalLight.enabled = Config.Config.lightStaysOn.Value ? true : inUse;
+        }
+    }
+    
+    [HarmonyPatch(typeof(Terminal), "QuitTerminal", MethodType.Normal)]
+    internal class TerminalQuitPatch
+    {
+        /*
+            postfix into ienumerator because I cannot figure out how to properly patch an ienumerator for the life of me
+        */
+        internal static void Postfix(Terminal __instance)
+        {
+            if (Config.Config.monitorStaysOn.Value)
+                __instance.StartCoroutine(waitUntilFrameEndTwiceToSetActive(__instance));
+        }
+
+        static IEnumerator waitUntilFrameEndTwiceToSetActive(Terminal terminal)
+        {
+            /*
+                wait two frames since original waits one
+            */
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            terminal.terminalUIScreen.gameObject.SetActive(true);
+            yield break;
         }
     }
 }
