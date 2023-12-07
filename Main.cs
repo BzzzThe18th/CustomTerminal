@@ -74,7 +74,7 @@ namespace CustomTerminal
             /*
                 the alpha on the back image of the credits display needs to maintain it's alpha value for visibility
             */
-            Image image = terminalInstance.topRightText.transform.parent.GetChild(6).GetComponent<Image>();
+            Image image = terminalInstance.topRightText.transform.parent.GetChild(CustomTerminal.Config.Config.useWallpaper.Value ? 6 : 5).GetComponent<Image>();
             image.color = new Color(colorTheme.r,colorTheme.g,colorTheme.b,image.color.a);
 
             /*
