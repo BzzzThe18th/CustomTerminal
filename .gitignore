@@ -392,3 +392,5 @@ FodyWeavers.xsd
 # Additional stuff
 Resources
 *.zip
+icon.png
+manifest.json
