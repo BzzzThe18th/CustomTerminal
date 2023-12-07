@@ -18,3 +18,5 @@ Custom terminal is a Lethal Company BepInEx mod that allows for the customizatio
 - custom wallpaper **[*`wallpaper`*]**
 - wallpaper rgb gamer mode **[*`wallpaperrgb`*]**
 - wallpaper use color theme **[*`wallpapercolor`*]**
+
+![Lethal_Company_T9g6uYQu18](https://github.com/BzzzThe18th/CustomTerminal/assets/69125495/bc445716-cb08-4764-9347-c96238b5121e)
