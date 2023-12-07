@@ -23,13 +23,65 @@ namespace CustomTerminal
         public static Terminal terminalInstance;
         public static RawImage wallpaperInstance;
 
-        public static Texture2D GetTextureFromFile(string path)
+        private static Texture2D GetTextureFromFile(string path)
         {
             byte[] imageData = File.ReadAllBytes(path);
             Texture2D texture = new Texture2D(1000,1000);
             texture.LoadImage(imageData);
             texture.filterMode = FilterMode.Point;
             return texture;
+        }
+
+        public static void RefreshAll()
+        {
+            if (terminalInstance == null)
+                return;
+            /*
+                convert epic 256 bit rgb to cringe unity rgb
+            */
+            Color colorTheme = new Color(CustomTerminal.Config.Config.colorThemeR.Value/255, CustomTerminal.Config.Config.colorThemeG.Value/255, CustomTerminal.Config.Config.colorThemeB.Value/255);
+            if (CustomTerminal.Config.Config.useWallpaper.Value)
+            {
+                if (wallpaperInstance == null)
+                {
+                    /*
+                        set up custom wallpaper
+                    */
+                    GameObject wallpaper = new GameObject("TerminalBackground");
+                    wallpaper.transform.SetParent(terminalInstance.topRightText.transform.parent, false);
+                    wallpaper.transform.localPosition = new Vector3(30,15,0);
+                    wallpaper.transform.localScale = new Vector3(5,5,5);
+                    wallpaper.transform.SetSiblingIndex(2);
+                    wallpaperInstance = wallpaper.AddComponent<RawImage>();
+                    wallpaperInstance.texture = GetTextureFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "wallpaper.png"));
+                }
+                /*
+                    set to color theme if enabled, white if not
+                */
+                if (CustomTerminal.Config.Config.wallpaperColorTheme.Value)
+                    wallpaperInstance.color = colorTheme;
+                else
+                    wallpaperInstance.color = Color.white;
+            }
+            /*
+                set all the ui colors
+            */
+            terminalInstance.screenText.caretColor = colorTheme;
+            terminalInstance.topRightText.color = colorTheme;
+            terminalInstance.inputFieldText.color = colorTheme;
+            terminalInstance.scrollBarVertical.image.color = colorTheme;
+            terminalInstance.scrollBarVertical.GetComponent<Image>().color = colorTheme;
+            /*
+                the alpha on the back image of the credits display needs to maintain it's alpha value for visibility
+            */
+            Image image = terminalInstance.topRightText.transform.parent.GetChild(6).GetComponent<Image>();
+            image.color = new Color(colorTheme.r,colorTheme.g,colorTheme.b,image.color.a);
+
+            /*
+                set the light color and intensity
+            */
+            terminalInstance.terminalLight.color = colorTheme;
+            terminalInstance.terminalLight.intensity = CustomTerminal.Config.Config.lightIntensity.Value;
         }
 
         void Awake()
@@ -46,7 +98,7 @@ namespace CustomTerminal
         void FixedUpdate() {
             if (terminalInstance)
             {
-                if (CustomTerminal.Config.Config.lightGamerMode.Value | CustomTerminal.Config.Config.uiGamerMode.Value) currentGamerRGB = Color.HSVToRGB(Mathf.PingPong(Time.time / 25 * CustomTerminal.Config.Config.rgbSpeed.Value, 1), 1, 1);
+                currentGamerRGB = Color.HSVToRGB(Mathf.PingPong(Time.time / 25 * CustomTerminal.Config.Config.rgbSpeed.Value, 1), 1, 1);
 
                 if (CustomTerminal.Config.Config.uiGamerMode.Value)
                 {
@@ -61,8 +113,8 @@ namespace CustomTerminal
                     /*
                         the alpha on the back image of the credits display needs to maintain it's alpha value for visibility
                     */
-                    float imageAlpha = terminalInstance.topRightText.transform.parent.GetChild(5).GetComponent<Image>().color.a;
-                    terminalInstance.topRightText.transform.parent.GetChild(5).GetComponent<Image>().color = new Color(currentGamerRGB.r,currentGamerRGB.g,currentGamerRGB.b,imageAlpha);
+                    Image image = terminalInstance.topRightText.transform.parent.GetChild(6).GetComponent<Image>();
+                    image.color = new Color(currentGamerRGB.r,currentGamerRGB.g,currentGamerRGB.b,image.color.a);
                 }
                 if (CustomTerminal.Config.Config.lightGamerMode.Value)
                 {

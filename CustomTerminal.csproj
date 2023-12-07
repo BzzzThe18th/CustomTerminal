@@ -19,6 +19,9 @@
   </ItemGroup>
   
   <ItemGroup>
+    <Reference Include="CommandLib">
+      <HintPath>D:\Games\Steam\steamapps\common\Lethal Company\BepInEx\plugins\CommandLib\CommandLib.dll</HintPath>
+    </Reference>
     <Reference Include="0Harmony">
       <HintPath>D:\Games\Steam\steamapps\common\Lethal Company\BepInEx\core\0Harmony.dll</HintPath>
     </Reference>

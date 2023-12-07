@@ -4,6 +4,7 @@ using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
+using CommandLib;
 
 namespace CustomTerminal.Patches
 {
@@ -12,52 +13,24 @@ namespace CustomTerminal.Patches
     {
         internal static void Postfix(Terminal __instance)
         {
-            Main.terminalInstance = __instance;
-            Config.Config.LoadConfig();
-
-            if (Config.Config.useWallpaper.Value)
-            {
-                /*
-                    set up custom wallpaper
-                */
-                GameObject wallpaper = new GameObject("TerminalBackground");
-                wallpaper.transform.SetParent(__instance.topRightText.transform.parent, false);
-                wallpaper.transform.localPosition = new Vector3(30,15,0);
-                wallpaper.transform.localScale = new Vector3(5,5,5);
-                wallpaper.transform.SetSiblingIndex(2);
-                Main.wallpaperInstance = wallpaper.AddComponent<RawImage>();
-                Main.wallpaperInstance.texture = Main.GetTextureFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "wallpaper.png"));
-            }
             /*
-                convert epic 256 bit rgb to cringe unity rgb
+                refresh all the junk when terminal starts
             */
-            Color colorTheme = new Color(Config.Config.colorThemeR.Value/255, Config.Config.colorThemeG.Value/255, Config.Config.colorThemeB.Value/255);
+            Config.Config.LoadConfig();
+            Main.terminalInstance = __instance;
+            Main.RefreshAll();
 
-            if (!Config.Config.uiGamerMode.Value)
-            {
-                /*
-                    set all the ui colors
-                */
-                __instance.screenText.caretColor = colorTheme;
-                __instance.topRightText.color = colorTheme;
-                __instance.inputFieldText.color = colorTheme;
-                __instance.scrollBarVertical.image.color = colorTheme;
-                __instance.scrollBarVertical.GetComponent<Image>().color = colorTheme;
-                /*
-                    the alpha on the back image of the credits display needs to maintain it's alpha value for visibility
-                */
-                float imageAlpha = __instance.topRightText.transform.parent.GetChild(6).GetComponent<Image>().color.a;
-                __instance.topRightText.transform.parent.GetChild(5).GetComponent<Image>().color = new Color(colorTheme.r,colorTheme.g,colorTheme.b,imageAlpha);
-            }
-
-            if (!Config.Config.lightGamerMode.Value)
-            {
-                /*
-                    set the light color and intensity
-                */
-                __instance.terminalLight.color = colorTheme;
-                __instance.terminalLight.intensity = Config.Config.lightIntensity.Value;
-            }
+            /*
+                register terminal commands with commandlib
+            */
+            Commands.RegisterCommand("refresh", "Refreshed configuration.\n", "ct_Refresh", __instance);
+            Commands.RegisterCommand("uirgb", "Toggled the gamer RGB on UI elements.\n", "ct_ToggleUIRGB", __instance);
+            Commands.RegisterCommand("lightrgb", "Toggled the gamer RGB on terminal lights.\n", "ct_ToggleLightRGB", __instance);
+            Commands.RegisterCommand("wallpaperrgb", "Toggled the gamer RGB on your wallpaper.\n", "ct_ToggleWallpaperRGB", __instance);
+            Commands.RegisterCommand("wallpapercolor", "Toggled the use of custom color theme for wallpaper.\n", "ct_ToggleWallpaperColor", __instance);
+            Commands.RegisterCommand("wallpaper", "Toggled the use of wallpaper.\n", "ct_ToggleWallpaper", __instance);
+            Commands.RegisterCommand("monitorstay", "Toggled monitor staying on when exiting the terminal.\n", "ct_ToggleUIStay", __instance);
+            Commands.RegisterCommand("lightstay", "Toggled lights staying on when exiting the terminal.\n", "ct_ToggleLightStay", __instance);
         }
     }
     [HarmonyPatch(typeof(Terminal), "SetTerminalNoLongerInUse", MethodType.Normal)]
@@ -105,6 +78,65 @@ namespace CustomTerminal.Patches
             yield return new WaitForEndOfFrame();
             terminal.terminalUIScreen.gameObject.SetActive(true);
             yield break;
+        }
+    }
+
+    [HarmonyPatch(typeof(Terminal), "RunTerminalEvents", MethodType.Normal)]
+    internal class TerminalRunEventPatch
+    {
+        /*
+            I'm going to pass in my node event to the end here after registering it with my shitty library
+        */
+        internal static void Postfix(Terminal __instance, TerminalNode node)
+        {
+            if (string.IsNullOrWhiteSpace(node.terminalEvent))
+            {
+                return;
+            }
+            switch (node.terminalEvent)
+            {
+                case "ct_Refresh":
+                    Config.Config.LoadConfig();
+                    break;
+                case "ct_ToggleUIRGB":
+                    Config.Config.uiGamerMode.Value = !Config.Config.uiGamerMode.Value;
+                    break;
+                case "ct_ToggleLightRGB":
+                    Config.Config.lightGamerMode.Value = !Config.Config.lightGamerMode.Value;
+                    break;
+                case "ct_ToggleWallpaper":
+                    if (Main.wallpaperInstance == null)
+                    {
+                        Config.Config.useWallpaper.Value = true;
+                    }
+                    else
+                    {
+                        if (Config.Config.useWallpaper.Value)
+                        {
+                            Config.Config.useWallpaper.Value = false;
+                            Main.wallpaperInstance.gameObject.SetActive(false);
+                        }
+                        else
+                        {
+                            Config.Config.useWallpaper.Value = true;
+                            Main.wallpaperInstance.gameObject.SetActive(true);
+                        }
+                    }
+                    break;
+                case "ct_ToggleWallpaperRGB":
+                    Config.Config.wallpaperGamerMode.Value = !Config.Config.wallpaperGamerMode.Value;
+                    break;
+                case "ct_ToggleWallpaperColor":
+                    Config.Config.wallpaperColorTheme.Value = !Config.Config.wallpaperColorTheme.Value;
+                    break;
+                case "ct_ToggleUIStay":
+                    Config.Config.monitorStaysOn.Value = !Config.Config.monitorStaysOn.Value;
+                    break;
+                case "ct_ToggleLightStay":
+                    Config.Config.lightStaysOn.Value = !Config.Config.lightStaysOn.Value;
+                    break;
+            }
+            Main.RefreshAll();
         }
     }
 }
