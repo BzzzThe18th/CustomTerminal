@@ -389,5 +389,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
-# Addition stuff
+# Additional stuff
 Resources
+*.zip
