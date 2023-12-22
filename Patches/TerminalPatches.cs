@@ -5,6 +5,7 @@ using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
 using CommandLib;
+using System;
 
 namespace CustomTerminal.Patches
 {
@@ -13,10 +14,28 @@ namespace CustomTerminal.Patches
     {
         internal static void Postfix(Terminal __instance)
         {
+            Config.Config.LoadConfig();
+            /*
+                set up references
+            */
+            Main.currencyBackground = __instance.topRightText.transform.parent.GetChild(5).GetComponent<Image>();
+            Main.scrollbarHandle = __instance.scrollBarVertical.GetComponent<Image>();
+            try {
+                GameObject wallpaper = new GameObject("TerminalBackground");
+                wallpaper.transform.SetParent(__instance.topRightText.transform.parent, false);
+                wallpaper.transform.localPosition = new Vector3(30,15,0);
+                wallpaper.transform.localScale = new Vector3(5,5,5);
+                wallpaper.transform.SetSiblingIndex(2);
+                Main.wallpaperInstance = wallpaper.AddComponent<RawImage>();
+                Main.wallpaperInstance.texture = Main.GetTextureFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "wallpaper.png"));
+                wallpaper.SetActive(false); 
+            }
+            catch (Exception e) {
+                Debug.Log($"Failed to set up wallpaper: {e}");
+            }
             /*
                 refresh all the junk when terminal starts
             */
-            Config.Config.LoadConfig();
             Main.terminalInstance = __instance;
             Main.RefreshAll();
 
@@ -136,6 +155,7 @@ namespace CustomTerminal.Patches
                     Config.Config.lightStaysOn.Value = !Config.Config.lightStaysOn.Value;
                     break;
             }
+            //TODO: rework config for saving immediately here
             Main.RefreshAll();
         }
     }
