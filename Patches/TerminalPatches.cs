@@ -155,7 +155,7 @@ namespace CustomTerminal.Patches
                     Config.Config.lightStaysOn.Value = !Config.Config.lightStaysOn.Value;
                     break;
             }
-            //TODO: rework config for saving immediately here
+            Config.Config.cfg.Save();
             Main.RefreshAll();
         }
     }
